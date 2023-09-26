@@ -5,12 +5,14 @@ import customtkinter
 from PIL import ImageTk
 
 import determinant
+import logger
+
 customtkinter.set_default_color_theme("green")
 customtkinter.set_appearance_mode("light")
 root = customtkinter.CTk()
-font=customtkinter.CTkFont(family='Comfortaa', size=13, weight='bold')
+font = customtkinter.CTkFont(family='Comfortaa', size=13, weight='bold')
 root.title("Матричный калькулятор")
-window_height = 670
+window_height = 370
 window_width = 501
 screen_width = root.winfo_screenwidth()
 screen_height = root.winfo_screenheight()
@@ -21,7 +23,7 @@ frame_grid = customtkinter.CTkFrame(root, corner_radius=0)
 frame_matrix = customtkinter.CTkFrame(root, corner_radius=0, fg_color='red')
 frame_matrix_size = customtkinter.CTkFrame(frame_grid, corner_radius=0)
 frame_buttons = customtkinter.CTkFrame(root, corner_radius=0)
-frame_result = customtkinter.CTkFrame(root, corner_radius=0, fg_color='red')
+frame_result = customtkinter.CTkFrame(root, corner_radius=0, fg_color='red', height=50)
 previous_size_cols = 0
 previous_size_rows = 0
 
@@ -40,6 +42,21 @@ def get_file(file_path):
     return file_path
 
 
+label = customtkinter.CTkLabel(frame_result, text='', height=130)
+label.pack(anchor='nw', expand=True)
+
+
+def one_line_answer(answer):
+    answer_status = answer[0]
+    if answer_status:
+        answer_return = f'Ответ: {answer[1]}'
+    else:
+        answer_return = f'Ошибка! {answer[1]}'
+    label.configure(frame_result, text=answer_return, fg_color="transparent", font=('Comfortaa', 17, 'bold'),
+                    height=130, anchor='nw')
+    label.pack(anchor='nw')
+
+
 def get_matrix(rows, cols):
     try:
         matrix = []
@@ -51,10 +68,8 @@ def get_matrix(rows, cols):
                 else:
                     matrix[i].append(float(0))
         return matrix
-    except ValueError as ex:
-        print(ex)
-    except Exception as ex:
-        print(ex)
+    except ValueError as exc:
+        logger.logger('Error', exc,'get_matrix')
 
 
 def matrix_generator(rows, cols):
@@ -64,7 +79,7 @@ def matrix_generator(rows, cols):
             widget.destroy()
         entries = []
         text_var = []
-        frame_matrix.pack(anchor='c', side='bottom',ipady=20)
+        frame_matrix.pack(anchor='c', side='top', pady=20)
         for i in range(rows):
             text_var.append([])
             entries.append([])
@@ -78,6 +93,10 @@ def matrix_generator(rows, cols):
                 entries[i][j].grid(column=j, row=i)
         previous_size_cols = cols
         previous_size_rows = rows
+        if rows != cols:
+            determinant_button.configure(state='disabled')
+        else:
+            determinant_button.configure(state='normal')
 
 
 def rows_slider_callback(value):
@@ -94,7 +113,7 @@ def create_matrix_btn_event():
 
 def determinant_button_event():
     if previous_size_rows != 0 and previous_size_cols != 0:
-        print(determinant.determinant(get_matrix(previous_size_rows, previous_size_cols)))
+        one_line_answer(determinant.determinant(get_matrix(previous_size_rows, previous_size_cols)))
 
 
 def inverse_button_event():
@@ -111,9 +130,11 @@ rows_slider_num = customtkinter.CTkLabel(frame_grid, text="2", fg_color="transpa
 cols_slider_text = customtkinter.CTkLabel(frame_grid, text="Столбцы матрицы:", fg_color="transparent", width=135,
                                           anchor='w', padx=10)
 cols_slider_num = customtkinter.CTkLabel(frame_grid, text="2", fg_color="transparent", width=20)
-rows_slider = customtkinter.CTkSlider(frame_grid, number_of_steps=3, from_=1, to=4, command=rows_slider_callback,width=180)
+rows_slider = customtkinter.CTkSlider(frame_grid, number_of_steps=3, from_=1, to=4, command=rows_slider_callback,
+                                      width=180)
 rows_slider.set(2)
-cols_slider = customtkinter.CTkSlider(frame_grid, number_of_steps=3, from_=1, to=4, command=cols_slider_callback,width=180)
+cols_slider = customtkinter.CTkSlider(frame_grid, number_of_steps=3, from_=1, to=4, command=cols_slider_callback,
+                                      width=180)
 cols_slider.set(2)
 rows_slider_num.grid(column=3, row=1)
 cols_slider_num.grid(column=3, row=2)
@@ -122,8 +143,9 @@ cols_slider_text.grid(column=1, row=2)
 rows_slider.grid(column=2, row=1)
 cols_slider.grid(column=2, row=2)
 
-create_matrix_btn = customtkinter.CTkButton(frame_grid, text="Создать Матрицу", command=create_matrix_btn_event, font=font)
-create_matrix_btn.grid(column=4, row=1, rowspan=2, sticky="ew",ipadx=5)
+create_matrix_btn = customtkinter.CTkButton(frame_grid, text="Создать Матрицу", command=create_matrix_btn_event,
+                                            font=font)
+create_matrix_btn.grid(column=4, row=1, rowspan=2, sticky="ew", ipadx=5)
 
 determinant_button = customtkinter.CTkButton(frame_buttons, text="Определитель", command=determinant_button_event,
                                              corner_radius=3, width=159, font=font)
@@ -137,7 +159,7 @@ determinant_button.grid(column=1, row=1, padx=4)
 inverse_button.grid(column=2, row=1, padx=4)
 frame_grid.pack(anchor='nw', fill=customtkinter.X)
 frame_buttons.pack(anchor='c', fill=customtkinter.X)
-frame_result.pack(side='bottom', ipady=110, fill=customtkinter.X)
+frame_result.pack(anchor='nw', side='bottom', fill=customtkinter.X)
 root.wm_iconbitmap()
 root.iconphoto(True, ImageTk.PhotoImage(file=get_file("data_files/icon.png"), master=root))
 root.resizable(width=False, height=False)

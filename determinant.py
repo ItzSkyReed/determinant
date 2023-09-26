@@ -9,15 +9,20 @@ def return_matrix(matrix):
 
 
 def determinant(matrix):
-    if len(matrix[0]) == 4:
-        deter = determinant_order_4(matrix)
-    elif len(matrix[0]) == 3:
-        deter = determinant_order_3(matrix)
-    elif len(matrix[0]) == 2:
-        deter = determinant_order_2(matrix)
-    else:
-        deter = matrix[0][0]
-    return f'Определитель равен: {nl if deter > 10**10 else "" }{int(deter) if deter.is_integer() else deter}'
+    try:
+        if len(matrix[0]) == 4:
+            deter = determinant_order_4(matrix)
+        elif len(matrix[0]) == 3:
+            deter = determinant_order_3(matrix)
+        elif len(matrix[0]) == 2:
+            deter = determinant_order_2(matrix)
+        else:
+            deter = matrix[0][0]
+        deter = round(deter, 5)
+        deter = int(deter) if (deter.is_integer() and deter < 10**20) else deter
+        return [True, deter]
+    except TypeError:
+        return [False, 'Введены не только цифры!']
 
 
 def determinant_order_2(matrix):
