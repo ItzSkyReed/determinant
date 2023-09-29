@@ -1,18 +1,3 @@
-print('Введите матрицу третьего порядка, обязательно вводите по одной строке через пробел.')
-any_matrix_order_3 = []
-for matr in range(0, 3):
-    try:
-        any_matrix_order_3.append(list(map(float, input().split(" "))))
-        if len(any_matrix_order_3[matr]) != 3:
-            print("Количество введенных чисел не 3")
-            exit()
-    except ValueError:
-        print("Неправильный ввод, возможно вы не ввели число или же ввели буквы.")
-        exit()
-    except Exception as ex:
-        print(f'Случилась ошибка о которой я не подумал. {ex}')
-        exit()
-
 
 def transposition(matrix):
     new_matrix = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
@@ -67,6 +52,3 @@ def matrix_calc(matrix):
         print('Обратная матрица третьего порядка:')
     for i in range(3):
         print(f'| {" | ".join(map(str, transpositioned_matrix[i]))} | ')
-
-
-matrix_calc(any_matrix_order_3)
