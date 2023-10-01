@@ -1,8 +1,10 @@
 import os
+import re
 import sys
+
 import customtkinter
 from PIL import ImageTk
-import re
+
 import matrix_operations
 
 customtkinter.set_default_color_theme("green")
@@ -10,7 +12,7 @@ customtkinter.set_appearance_mode("light")
 root = customtkinter.CTk()
 font = customtkinter.CTkFont(family='Comfortaa', size=13, weight='bold')
 root.title("Матричный калькулятор")
-window_height = 400
+window_height = 445
 window_width = 552
 screen_width = root.winfo_screenwidth()
 screen_height = root.winfo_screenheight()
@@ -18,18 +20,18 @@ x_cordinate = int((screen_width / 2) - (window_width / 2))
 y_cordinate = int((screen_height / 2) - (window_height / 2))
 root.geometry("{}x{}+{}+{}".format(window_width, window_height, x_cordinate, y_cordinate))
 
-
 frame_grid = customtkinter.CTkFrame(root, corner_radius=0)
 frame_matrix = customtkinter.CTkFrame(root, corner_radius=0)
 frame_matrix_size = customtkinter.CTkFrame(frame_grid, corner_radius=0)
 frame_buttons = customtkinter.CTkFrame(root, corner_radius=0)
-frame_result = customtkinter.CTkFrame(root, corner_radius=0, height=160, fg_color="#C1C1C1")
+frame_result = customtkinter.CTkFrame(root, corner_radius=0, height=132, fg_color="#C1C1C1")
 frame_result.pack_propagate(False)
 frame_matrix_ans = customtkinter.CTkFrame(frame_result, corner_radius=3, fg_color='transparent')
 
 # В начале!
 previous_size_cols = 0
 previous_size_rows = 0
+
 
 def resource_path(relative_path):
     try:
@@ -48,19 +50,30 @@ def get_file(file_path):
 label = customtkinter.CTkLabel(frame_result, text='')
 label.pack(anchor='nw', expand=True, fill='both')
 
+
 def callback(event):
     event.widget.select_range(0, 'end')
     event.widget.icursor('end')
+
+
 root.bind('<Control-KeyRelease-a>', callback)
 
+pattern = r'[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?'
+
+
+def one_line_check(line):
+    if ''.join(re.findall(pattern, str(line))) != str(line):
+        return False
+    return True
+
+
 def matrix_check(matrix):
-    pattern = r'[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?'
     for i in range(len(matrix)):
         for j in range(len(matrix[0])):
             if ''.join(re.findall(pattern, str(matrix[i][j]))) != str(matrix[i][j]):
-                print(matrix[i][j])
                 return False
     return True
+
 
 def one_line_answer(answer):
     global label
@@ -73,8 +86,10 @@ def one_line_answer(answer):
     label.pack(anchor='nw', expand=True, fill='both')
     label.configure(frame_result, text=answer, font=('Comfortaa', 17, 'bold'), height=130, width=1000)
 
+
 def matrix_answer(answer):
-    global frame_matrix_ans
+    cont = 1
+    global frame_matrix_ans, entries_ans
     matrix = answer[0]
     rows = answer[1]
     cols = answer[2]
@@ -82,7 +97,6 @@ def matrix_answer(answer):
         label.destroy()
     except:
         pass
-    global entries_ans
     try:
         for widget in frame_matrix_ans.winfo_children():
             widget.destroy()
@@ -97,18 +111,25 @@ def matrix_answer(answer):
             deterf = round(abs(deter), 3)
             if (deterf % 1) == 0:
                 deterf = int(deterf)
-        deter_label = customtkinter.CTkLabel(frame_matrix_ans, text=f'{int(deter // abs(deter))}/{deterf} ×',
-                                             font=('Comfortaa', 17, 'bold'))
-        deter_label.grid(row=0, column=0, rowspan=rows+1)
-    entries_ans = []
-    for i in range(rows):
-        entries_ans.append([])
-        for j in range(cols):
-            entries_ans[i].append(
-                customtkinter.CTkLabel(frame_matrix_ans, text=matrix[i][j], font=font, width=97,
-                                       justify=customtkinter.CENTER, corner_radius=0, fg_color='#D3D3D3'))
-            entries_ans[i][j].grid(column=j + 1, row=i + 1, padx=1, pady=1)
-            entries_ans[i][j].grid_propagate(0)
+        try:
+            deter_label = customtkinter.CTkLabel(frame_matrix_ans, text=f'{int(deter // abs(deter))}/{deterf} ×',
+                                                 font=('Comfortaa', 17, 'bold'))
+        except ValueError:
+            cont = 0
+            deter_label = customtkinter.CTkLabel(frame_matrix_ans,
+                                                 text=f'Произошла ошибка. Возможно число слишком большое',
+                                                 font=('Comfortaa', 17, 'bold'))
+        deter_label.grid(row=0, column=0, rowspan=rows + 1)
+    if cont == 1:
+        entries_ans = []
+        for i in range(rows):
+            entries_ans.append([])
+            for j in range(cols):
+                entries_ans[i].append(
+                    customtkinter.CTkLabel(frame_matrix_ans, text=matrix[i][j], font=font, width=97,
+                                           justify=customtkinter.CENTER, corner_radius=0, fg_color='#D3D3D3'))
+                entries_ans[i][j].grid(column=j + 1, row=i + 1, padx=1, pady=1)
+                entries_ans[i][j].grid_propagate(0)
 
 
 def get_matrix(rows, cols):
@@ -124,6 +145,7 @@ def get_matrix(rows, cols):
         return matrix
     except:
         return ['Ошибка']
+
 
 def matrix_generator(rows, cols):
     global text_var, entries, previous_size_rows, previous_size_cols, frame_matrix
@@ -149,9 +171,15 @@ def matrix_generator(rows, cols):
         if rows != cols:
             inverse_button.configure(state='disabled')
             determinant_button.configure(state='disabled')
+            minor_button.configure(state='disabled')
+            algebraic_complement_button.configure(state='disabled')
+            matrix_trace_button.configure(state='disabled')
         else:
             determinant_button.configure(state='normal')
             inverse_button.configure(state='normal')
+            minor_button.configure(state='normal')
+            algebraic_complement_button.configure(state='normal')
+            matrix_trace_button.configure(state='normal')
 
 
 def rows_slider_callback(value):
@@ -168,19 +196,20 @@ def create_matrix_btn_event():
 
 def determinant_button_event():
     if previous_size_rows != 0 and previous_size_cols != 0:
-        around = ''
         deter = matrix_operations.determinant(get_matrix(previous_size_rows, previous_size_cols))
-        if deter.is_integer():
-            deter = int(deter)
-        elif round(deter, 5) == 0 and deter != 0:
-            around = 'примерно'
-        one_line_answer(f'Определитель {around} равен: {round(deter, 5)}')
+        if one_line_check(deter):
+            one_line_answer(f'Определитель равен: {deter}')
+        else:
+            one_line_answer('Матрица содержит недопустимые символы')
 
 
 def inverse_button_event():
     if previous_size_rows != 0 and previous_size_cols != 0:
         if matrix_check(get_matrix(previous_size_rows, previous_size_cols)):
-            answer = matrix_operations.inverse_matrix(get_matrix(previous_size_rows, previous_size_cols))
+            if check_var.get() == 1:
+                answer = matrix_operations.inverse_matrix(get_matrix(previous_size_rows, previous_size_cols), True)
+            else:
+                answer = matrix_operations.inverse_matrix(get_matrix(previous_size_rows, previous_size_cols), False)
             if answer != 0:
                 matrix_answer(answer)
             else:
@@ -188,25 +217,64 @@ def inverse_button_event():
         else:
             one_line_answer('Матрица содержит недопустимые символы')
 
+
 def transposition_button_event():
-    if previous_size_rows != 0 and previous_size_cols != 0:
-        answer = matrix_operations.transposition(get_matrix(previous_size_rows, previous_size_cols))
-        rows = len(answer)
-        cols = len(answer[0])
-        matrix_answer([answer,rows,cols])
+    if matrix_check(get_matrix(previous_size_rows, previous_size_cols)):
+        if previous_size_rows != 0 and previous_size_cols != 0:
+            answer = matrix_operations.transposition_event(get_matrix(previous_size_rows, previous_size_cols))
+            rows = len(answer)
+            cols = len(answer[0])
+            matrix_answer([answer, rows, cols])
+    else:
+        one_line_answer('Матрица содержит недопустимые символы')
 
 
-rows_slider_text = customtkinter.CTkLabel(frame_grid, text="Строки матрицы:", fg_color="transparent", width=140,
-                                          anchor='w', padx=10)
-rows_slider_num = customtkinter.CTkLabel(frame_grid, text="2", fg_color="transparent", width=20)
-cols_slider_text = customtkinter.CTkLabel(frame_grid, text="Столбцы матрицы:", fg_color="transparent", width=140,
-                                          anchor='w', padx=10)
-cols_slider_num = customtkinter.CTkLabel(frame_grid, text="2", fg_color="transparent", width=20)
+def minor_button_event():
+    if matrix_check(get_matrix(previous_size_rows, previous_size_cols)):
+        if previous_size_rows != 0 and previous_size_cols != 0:
+            answer = matrix_operations.minor(get_matrix(previous_size_rows, previous_size_cols))
+            rows = len(answer)
+            cols = len(answer[0])
+            matrix_answer([answer, rows, cols])
+    else:
+        one_line_answer('Матрица содержит недопустимые символы')
+
+
+def algebraic_complement_event():
+    if matrix_check(get_matrix(previous_size_rows, previous_size_cols)):
+        if previous_size_rows != 0 and previous_size_cols != 0:
+            answer = matrix_operations.algebraic_complement(get_matrix(previous_size_rows, previous_size_cols))
+            rows = len(answer)
+            cols = len(answer[0])
+            matrix_answer([answer, rows, cols])
+    else:
+        one_line_answer('Матрица содержит недопустимые символы')
+
+
+def matrix_trace_event():
+    if matrix_check(get_matrix(previous_size_rows, previous_size_cols)):
+        if previous_size_rows != 0 and previous_size_cols != 0:
+            answer = matrix_operations.matrix_trace(get_matrix(previous_size_rows, previous_size_cols))
+            one_line_answer(f'След матрицы: {answer}')
+    else:
+        one_line_answer('Матрица содержит недопустимые символы')
+
+
+rows_slider_text = customtkinter.CTkLabel(frame_grid, text="Строки матрицы:", fg_color="transparent", width=160,
+                                          anchor='w', padx=5, font=font)
+rows_slider_num = customtkinter.CTkLabel(frame_grid, text="2", fg_color="transparent", width=25)
+cols_slider_text = customtkinter.CTkLabel(frame_grid, text="Столбцы матрицы:", fg_color="transparent", width=160,
+                                          anchor='w', padx=5, font=font)
+cols_slider_num = customtkinter.CTkLabel(frame_grid, text="2", fg_color="transparent", width=25, font=font)
 rows_slider = customtkinter.CTkSlider(frame_grid, number_of_steps=3, from_=1, to=4, command=rows_slider_callback,
                                       width=200)
 rows_slider.set(2)
 cols_slider = customtkinter.CTkSlider(frame_grid, number_of_steps=3, from_=1, to=4, command=cols_slider_callback,
                                       width=200)
+check_var = customtkinter.IntVar(value=1)
+checkbox = customtkinter.CTkCheckBox(frame_grid, text="Выводить определитель отдельно от обратной матрицы",
+                                     variable=check_var, onvalue=1, offvalue=0, border_width=3, corner_radius=3,
+                                     font=font)
 cols_slider.set(2)
 rows_slider_num.grid(column=3, row=1)
 cols_slider_num.grid(column=3, row=2)
@@ -214,9 +282,9 @@ rows_slider_text.grid(column=1, row=1)
 cols_slider_text.grid(column=1, row=2)
 rows_slider.grid(column=2, row=1)
 cols_slider.grid(column=2, row=2)
-
+checkbox.grid(column=1, row=3, columnspan=4, padx=5, sticky='nw', pady=3)
 create_matrix_btn = customtkinter.CTkButton(frame_grid, text="Создать Матрицу", command=create_matrix_btn_event,
-                                            font=font,width=175)
+                                            font=font, width=154)
 create_matrix_btn.grid(column=4, row=1, rowspan=2, sticky="ew", ipadx=5)
 
 determinant_button = customtkinter.CTkButton(frame_buttons, text="Определитель", command=determinant_button_event,
@@ -226,9 +294,21 @@ inverse_button = customtkinter.CTkButton(frame_buttons, text="Обратная �
 transposition_button = customtkinter.CTkButton(frame_buttons, text="Транспонирование",
                                                command=transposition_button_event,
                                                corner_radius=3, width=176, font=font)
+minor_button = customtkinter.CTkButton(frame_buttons, text="Матрица миноров",
+                                       command=minor_button_event,
+                                       corner_radius=3, width=176, font=font)
+algebraic_complement_button = customtkinter.CTkButton(frame_buttons, text="Алгебр. дополнение",
+                                                      command=algebraic_complement_event,
+                                                      corner_radius=3, width=176, font=font)
+matrix_trace_button = customtkinter.CTkButton(frame_buttons, text="След матрицы",
+                                              command=matrix_trace_event,
+                                              corner_radius=3, width=176, font=font)
 transposition_button.grid(column=3, row=1, padx=4)
 determinant_button.grid(column=1, row=1, padx=4)
 inverse_button.grid(column=2, row=1, padx=4)
+minor_button.grid(column=1, row=2, padx=4, pady=7)
+algebraic_complement_button.grid(column=2, row=2, padx=4, pady=7)
+matrix_trace_button.grid(column=3, row=2, padx=4, pady=7)
 frame_grid.pack(anchor='nw', fill=customtkinter.X)
 frame_buttons.pack(anchor='c', fill=customtkinter.X)
 frame_result.pack(side='bottom', fill=customtkinter.X)

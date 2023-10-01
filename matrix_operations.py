@@ -1,16 +1,14 @@
 def determinant(matrix):
-    try:
-        if len(matrix[0]) == 4:
-            deter = determinant_order_4(matrix)
-        elif len(matrix[0]) == 3:
-            deter = determinant_order_3(matrix)
-        elif len(matrix[0]) == 2:
-            deter = determinant_order_2(matrix)
-        else:
-            deter = matrix[0][0]
-        return deter
-    except:
-        print(Exception)
+    if len(matrix[0]) == 4:
+        deter = determinant_order_4(matrix)
+    elif len(matrix[0]) == 3:
+        deter = determinant_order_3(matrix)
+    elif len(matrix[0]) == 2:
+        deter = determinant_order_2(matrix)
+    else:
+        deter = matrix[0][0]
+    deter = one_line_output(deter)
+    return deter
 
 
 def determinant_order_2(matrix):
@@ -59,39 +57,140 @@ def matrix_minor(matrix, i, j):
     return [row[:j] + row[j + 1:] for row in (matrix[:i] + matrix[i + 1:])]
 
 
-def inverse_matrix(matrix):
-    deter = 0
-    if len(matrix[0]) == 4:
+def algebraic_complement_3(matrix, separate_deter, deter):
+    inversed_matrix = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
+    for i in range(1, 4):
+        for j in range(1, 4):
+            if separate_deter:
+                inversed_matrix[i - 1][j - 1] = (
+                        (-1) ** (i + j) * determinant_order_2(matrix_minor(matrix, i - 1, j - 1)))
+            else:
+                inversed_matrix[i - 1][j - 1] = (
+                        (-1) ** (i + j) * determinant_order_2(matrix_minor(matrix, i - 1, j - 1)) * (1 / deter))
+    return inversed_matrix
+
+
+def algebraic_complement_4(matrix, separate_deter, deter):
+    inversed_matrix = [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]
+    for i in range(1, 5):
+        for j in range(1, 5):
+            if separate_deter:
+                inversed_matrix[i - 1][j - 1] = (
+                        (-1) ** (i + j) * determinant_order_3(matrix_minor(matrix, i - 1, j - 1)))
+            else:
+                inversed_matrix[i - 1][j - 1] = (
+                        (-1) ** (i + j) * determinant_order_3(matrix_minor(matrix, i - 1, j - 1)) * (1 / deter))
+    return inversed_matrix
+
+
+def minor_to_matrix_4(matrix):
+    inversed_matrix = [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]
+    for i in range(1, 5):
+        for j in range(1, 5):
+            inversed_matrix[i - 1][j - 1] = (determinant_order_3(matrix_minor(matrix, i - 1, j - 1)))
+    return inversed_matrix
+
+
+def minor_to_matrix_3(matrix):
+    inversed_matrix = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
+    for i in range(1, 4):
+        for j in range(1, 4):
+            inversed_matrix[i - 1][j - 1] = (determinant_order_2(matrix_minor(matrix, i - 1, j - 1)))
+    return inversed_matrix
+
+
+def inverse_matrix(matrix, separate_deter):
+    if len(matrix) == 4:
         deter = determinant_order_4(matrix)
         if deter == 0:
             return 0
-    elif len(matrix[0]) == 3:
+        matrix = algebraic_complement_4(matrix, separate_deter, deter)
+        matrix = transposition(matrix)
+    elif len(matrix) == 3:
         deter = determinant_order_3(matrix)
         if deter == 0:
             return 0
-        inverse_matrix = [[0, 0, 0], [0, 0, 0], [0, 0, 0], ]
-        for i in range(1,4):
-            for j in range(1,4):
-                inverse_matrix[i-1][j-1] = ((-1) ** (i + j + 1) * determinant_order_2(matrix_minor(matrix, i-1, j-1)))
-        matrix = transposition(inverse_matrix)
-    elif len(matrix[0]) == 2:
+        matrix = algebraic_complement_3(matrix, separate_deter, deter)
+        matrix = transposition(matrix)
+    elif len(matrix) == 2:
         deter = determinant_order_2(matrix)
-
         if deter == 0:
             return 0
+        matrix = [[matrix[1][1], -(matrix[0][1])], [-matrix[1][0], (matrix[0][0])]]
     else:
-        matrix[0][0] = 1 / matrix[0][0]
+        deter = matrix[0][0]
+        if deter == 0:
+            return 0
+        if not separate_deter:
+            matrix[0][0] = 1 / matrix[0][0]
+        else:
+            matrix[0][0] = matrix[0][0] / matrix[0][0]
+    matrix = matrix_output(matrix)
+    answer = [matrix, len(matrix), len(matrix)]
+    if deter != 1 and separate_deter:
+        answer.append(deter)
+    return answer
+
+
+def transposition_event(matrix):
+    matrix = transposition(matrix)
+    matrix = matrix_output(matrix)
+    return matrix
+
+
+def minor(matrix):
+    if len(matrix) == 4:
+        matrix = minor_to_matrix_4(matrix)
+    if len(matrix) == 3:
+        matrix = minor_to_matrix_3(matrix)
+    if len(matrix) == 2:
+        matrix = [[(matrix_minor(matrix, 0, 0)[0][0]), (matrix_minor(matrix, 0, 1)[0][0])],
+                  [(matrix_minor(matrix, 1, 0)[0][0]),
+                   (matrix_minor(matrix, 1, 1)[0][0])]]
+    matrix = matrix_output(matrix)
+    return matrix
+
+
+def algebraic_complement(matrix):
+    if len(matrix) == 4:
+        matrix = algebraic_complement_4(matrix, True, 1)
+    if len(matrix) == 3:
+        matrix = algebraic_complement_3(matrix, True, 1)
+    if len(matrix) == 2:
+        matrix = [[(matrix_minor(matrix, 0, 0)[0][0]), -(matrix_minor(matrix, 0, 1)[0][0])],
+                  [(matrix_minor(matrix, 1, 0)[0][0]),
+                   -(matrix_minor(matrix, 1, 1)[0][0])]]
+    matrix = matrix_output(matrix)
+    return matrix
+
+
+def matrix_trace(matrix):
+    trace = 0
     for i in range(len(matrix)):
-        for j in range(len(matrix)):
+        trace += matrix[i][i]
+    trace = one_line_output(trace)
+    return trace
+
+
+def matrix_output(matrix):
+    for i in range(len(matrix)):
+        for j in range(len(matrix[0])):
+            matrix[i][j] = round(matrix[i][j], 5)
             if matrix[i][j] % 1 == 0:
                 matrix[i][j] = int(matrix[i][j])
             if abs(matrix[i][j]) > 100_000_000:
                 matrix[i][j] = "{:.4e}".format(matrix[i][j])
             elif abs(matrix[i][j]) < 0.000001 and matrix[i][j] != 0:
                 matrix[i][j] = "{:.3e}".format(matrix[i][j])
-            else:
-                matrix[i][j] = round(matrix[i][j], 5)
-    answer = [matrix, len(matrix), len(matrix)]
-    if deter != 1:
-        answer.append(deter)
-    return answer
+    return matrix
+
+
+def one_line_output(line):
+    line = round(line, 5)
+    if line % 1 == 0:
+        line = int(line)
+    if abs(line) > 100_000_000_000:
+        line = "{:.16e}".format(line)
+    elif abs(line) < 0.000000001 and line != 0:
+        line = "{:.16e}".format(line)
+    return line
