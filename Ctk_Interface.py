@@ -196,11 +196,18 @@ def create_matrix_btn_event():
 
 def determinant_button_event():
     if previous_size_rows != 0 and previous_size_cols != 0:
-        deter = matrix_operations.determinant(get_matrix(previous_size_rows, previous_size_cols))
-        if one_line_check(deter):
-            one_line_answer(f'Определитель равен: {deter}')
+        if previous_size_rows == 1 and previous_size_rows == 1:
+            if one_line_check(get_matrix(previous_size_rows, previous_size_cols)[0][0]):
+                deter = matrix_operations.determinant(get_matrix(previous_size_rows, previous_size_cols))
+                one_line_answer(f'Определитель равен: {deter}')
+            else:
+                one_line_answer('Матрица содержит недопустимые символы')
         else:
-            one_line_answer('Матрица содержит недопустимые символы')
+            if matrix_check(get_matrix(previous_size_rows, previous_size_cols)):
+                deter = matrix_operations.determinant(get_matrix(previous_size_rows, previous_size_cols))
+                one_line_answer(f'Определитель равен: {deter}')
+            else:
+                one_line_answer('Матрица содержит недопустимые символы')
 
 
 def inverse_button_event():
